@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steadman's Checkin Tool</title>
+    <style>
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css');
+
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Table styles */
+        .table-container {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        table {
+            table-layout: auto;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .column-auto {
+            width: auto;
+        }
+
+        .column-min {
+            width: 1%;
+            white-space: nowrap;
+        }
+
+        .truncate {
+            max-width: 150px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        /* Sortable header styles */
+        .sortable:hover {
+            cursor: pointer;
+            background-color: #e6e6e6;
+        }
+
+        /* Multi-select dropdown styles */
+        .multi-select-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .multi-select-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .multi-select-dropdown-content label {
+            display: block;
+            padding: 5px;
+        }
+
+        .multi-select-dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+
+        .show {
+            display: block;
+        }
+
+        /* APN lookup styles */
+        .apn-lookup {
+            cursor: pointer;
+        }
+
+        .apn-lookup:hover {
+            text-decoration: underline;
+        }
+
+        /* Hidden column styles */
+        .hidden-column {
+            display: none;
+        }
+
+        /* File input wrapper styles */
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* File input button styles */
+        .file-input-button {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .file-input-button:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-input-button i {
+            margin-right: 0.5rem;
+        }
+
+        /* Button styles */
+        button {
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 0.25rem;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #e9ecef;
+        }
+
+        /* Row color styles */
+        .bg-yellow-200 { background-color: #fefcbf; }
+        .bg-green-200 { background-color: #c6f6d5; }
+        .bg-yellow-300 { background-color: #faf089; }
+        .bg-red-200 { background-color: #fed7d7; }
+        .bg-orange-200 { background-color: #feebc8; }
+        .bg-blue-200 { background-color: #bee3f8; }
+
+        /* Floating controls styles */
+        #floatingControls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #f8f9fa;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #floatingControls.hidden {
+            transform: translateY(-100%);
+        }
+
+        #toggleControlsBtn {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1001;
+            padding: 5px 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: #f8f9fa;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #toggleControlsBtn:hover {
+            background-color: #e9ecef;
+        }
+
+        /* Description input styles */
+        .description-input {
+            font-size: inherit;
+            font-family: inherit;
+            width: 100%;
+            padding: 0;
+            border: none;
+            background: transparent;
+            text-align: center;
+        }
+
+        /* Print styles */
+        @media print {
+            #floatingControls, #toggleControlsBtn {
+                display: none !important;
+            }
+        }
+		.modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#upcModalContent {
+    margin-top: 20px;
+}
+
+#upcModalContent p {
+    margin: 10px 0;
+}
+
+.upc-search {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.upc-search input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 0.25rem;
+    margin-right: 5px;
+}
+    </style>
+</head>
+<body>
+<div id="floatingControls">
+    <div class="control-group">
+        <div class="file-input-wrapper">
+            <input type="file" accept=".csv" id="csvFileInput" class="mb-4">
+            <span class="file-input-button csv-button">CSV</span>
+        </div>
+        <div class="file-input-wrapper">
+            <input type="file" accept=".psv" id="psvFileInput" class="mb-4">
+            <span class="file-input-button psv-button">PSV</span>
+        </div>
+        <div class="multi-select-dropdown">
+            <button onclick="toggleDropdown()" class="p-2 border rounded">Routes</button>
+            <div id="routeDropdown" class="multi-select-dropdown-content">
+                <!-- Route checkboxes will be dynamically added here -->
+            </div>
+        </div>
+        <button onclick="invertRouteSelection()" class="p-2 border rounded">Invert</button>
+        <button onclick="toggleProcessingDeliveryRows()" class="p-2 border rounded" id="toggleProcessingBtn">Hide 40s</button>
+        <button onclick="toggleLocalDrivers()" class="p-2 border rounded" id="toggleLocalDriversBtn">Hide L.Rts</button>
+        <button onclick="toggleDateColumn()" class="p-2 border rounded" id="toggleDateBtn">Date</button>
+        <button onclick="toggleColumnVisibility()" class="p-2 border rounded">Columns</button>
+        <button onclick="copyAllAPNLookups()" class="p-2 border rounded">Copy APN</button>
+        <button onclick="bulkEnterDescriptions()" class="p-2 border rounded">Bulk Desc</button>
+        <button onclick="copyAllDescriptions()" class="p-2 border rounded">Copy Desc</button>
+        <input type="text" id="upcInput" placeholder="UPC">
+        <button onclick="searchUPC()" class="p-2 border rounded">Search</button>
+    </div>
+</div>
+<button id="toggleControlsBtn" onclick="toggleControls()">Show</button>
+<div id="tableContainer" class="table-container"></div>
+    <script>
+        let csvData = { headers: [], data: [] };
+        let sortColumns = [
+            { column: 'Route', direction: 'asc' },
+            { column: 'Reason', direction: 'asc' }
+        ];
+        let selectedRoutes = new Set();
+        let apnDescriptions = {};
+        let hideProcessingDelivery = false;
+        let hiddenColumns = new Set();
+        let hideLocalDrivers = false;
+        let isDateColumnHidden = false;
+        let localDrivers = new Set([
+            "James, John", "Evola, Lewis", "Rosario, Thomas", "Gerena, Edgardo",
+            "Veras De Los Santos, Jeremy", "Miranda, Kevin", "Gomes, Brian",
+            "Jordan, Justin", "Griffin, David", "McKnight, Anthony", "Mcknight, Anthony",
+            "Reynolds, Oshane", "Longley, Michael", "Luna, Lenn", "Archambault, Aaro",
+            "Fishman, Andrew", "Diaz, Juan", "Ramirez, Christian", "Hyslop, Michael",
+            "Claiborne, John", "Diaz-Heredia, Ramser", "Jones, General", "Thomas, Calvin",
+            "Smith, Troy", "Anguita, Estefano", "Jeffers, Justin", "Lugo, Abner",
+            "Hunt, Gary", "Joseph, Dwayne", "Gendron, Harold", "Butler, Naseem",
+            "Ramos, April", "Spence, Shane", "Archambault, Aaron", "Luna, Lenny",
+            "Fishman, Ryan", "Sanderson, Sean", "Robbins, David"
+        ]);
+
+     let originalSelectedRoutes = new Set();
+
+		function toggleLocalDrivers() {
+			hideLocalDrivers = !hideLocalDrivers;
+			const btn = document.getElementById('toggleLocalDriversBtn');
+			
+			if (hideLocalDrivers) {
+				btn.textContent = 'Show L.Rts';
+				// Store the original state before hiding
+				originalSelectedRoutes = new Set(selectedRoutes);
+				
+				csvData.data.forEach(row => {
+					if (isLocalDriver(row['Driver'])) {
+						selectedRoutes.delete(row['Route']);
+					}
+				});
+			} else {
+				btn.textContent = 'Hide L.Rts';
+				// Restore the original state
+				selectedRoutes = new Set(originalSelectedRoutes);
+			}
+
+			updateRouteCheckboxes();
+			renderTable();
+		}
+
+        function copyAllDescriptions() {
+            const visibleData = getFilteredAndSortedData();
+            const descriptions = visibleData.map((row, index) => {
+                return apnDescriptions[index] || '';
+            }).filter(desc => desc !== '').join('\n');
+            
+            if (descriptions) {
+                navigator.clipboard.writeText(descriptions)
+                    .then(() => console.log('Descriptions copied successfully'))
+                    .catch(err => console.error('Failed to copy descriptions: ', err));
+            } else {
+                console.log('No descriptions to copy');
+            }
+        }
+
+        function invertRouteSelection() {
+            const allRoutes = new Set(csvData.data.map(row => row['Route']));
+            
+            allRoutes.forEach(route => {
+                if (selectedRoutes.has(route)) {
+                    selectedRoutes.delete(route);
+                } else {
+                    selectedRoutes.add(route);
+                }
+            });
+
+            if (hideLocalDrivers) {
+                hideLocalDrivers = false;
+                document.getElementById('toggleLocalDriversBtn').textContent = 'Hide Local Drivers';
+            }
+
+            updateRouteCheckboxes();
+            renderTable();
+        }
+
+        function parseCSV(text) {
+            console.log("Parsing CSV...");
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            const originalHeaders = lines[0].split(',').map(header => header.trim());
+            
+            const headerMap = {
+                'Order Number': 'Order #',
+                'Customer Number': 'Cust. #',
+                'Customer Name': 'Cust. Name',
+                'Route': 'Route',
+                'Reason Code': 'Reason',
+                'Purpose': 'Purpose',
+                'Item ID': 'Item ID',
+                'Qty (Exc / Tot)': 'Qty',
+                'Driver Name': 'Driver',
+                'Date': 'Date',
+                'APN Lookup': 'APN',
+                'APN Description': 'APN Desc.'
+            };
+
+            const headers = originalHeaders.map(header => headerMap[header] || header);
+            console.log(`Shortened Headers: ${headers.join(', ')}`);
+            
+            const data = lines.slice(1).map(line => {
+                const values = [];
+                let inQuotes = false;
+                let currentValue = '';
+                
+                for (let char of line) {
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(currentValue.trim());
+                        currentValue = '';
+                    } else {
+                        currentValue += char;
+                    }
+                }
+                values.push(currentValue.trim());
+                
+                const row = headers.reduce((obj, header, index) => {
+                    let value = values[index] || '';
+                    if (header === 'Date') {
+                        value = value.replace(' (EDT)', '');
+                    }
+                    if (header === 'Purpose') {
+                        value = value.replace(' - FIXED', '');
+                    }
+                    obj[header] = value;
+                    return obj;
+                }, {});
+
+                if (row['Order #']) {
+                    row['Order #'] = row['Order #'].substring(0, 7);
+                }
+
+                if (row['Item ID']) {
+                    const itemId = row['Item ID'];
+                    const len = itemId.length;
+                    const boldStart = Math.max(0, len - 10);
+                    const boldEnd = Math.max(0, len - 3);
+                    row['Item ID'] = 
+                        itemId.substring(0, boldStart) + 
+                        '<strong>' + itemId.substring(boldStart, boldEnd) + '</strong>' + 
+                        itemId.substring(boldEnd);
+                    
+                    row['APN'] = itemId.substring(boldStart, boldEnd);
+                }
+
+                if (row['Qty']) {
+                    const [exc, tot] = row['Qty'].split('/').map(v => parseInt(v.trim()) || 0);
+                    row['Quantity'] = { exc, tot };
+                }
+
+                return row;
+            });
+
+            console.log(`Parsed ${data.length} rows`);
+            headers.push('APN Desc.');
+
+            return { headers, data: mergeRows(data) };
+        }
+function mergeRows(data) {
+            console.log("Merging rows...");
+            const mergedData = {};
+            data.forEach(row => {
+                const key = `${row['Order #']}-${row['APN']}-${row['Reason']}`;
+                if (mergedData[key]) {
+                    mergedData[key]['Quantity'].exc += row['Quantity'].exc;
+                    mergedData[key]['Quantity'].tot += row['Quantity'].tot;
+                } else {
+                    mergedData[key] = { ...row };
+                }
+            });
+
+            const result = Object.values(mergedData).map(row => ({
+                ...row,
+                'Qty': `${row['Quantity'].exc} / ${row['Quantity'].tot}`
+            }));
+            console.log(`Merged to ${result.length} rows`);
+            return result;
+        }
+
+        function handleCSVFileUpload(event) {
+            console.log("CSV file upload started");
+            const file = event.target.files[0];
+            if (!file) {
+                console.log('No CSV file selected.');
+                return;
+            }
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('Please select a CSV file.');
+                event.target.value = ''; // Clear the file input
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                csvData = parseCSV(text);
+                populateRouteDropdown();
+                apnDescriptions = {};
+                renderTable();
+            };
+            reader.readAsText(file);
+        }
+
+        function processPSVData(text) {
+            console.log("Processing PSV data...");
+            const lines = text.split('\n');
+            const headers = lines[0].split('|');
+            const productDescriptionIndex = headers.findIndex(header => header.trim().startsWith('Product Description USF'));
+            const productDescriptionLaptopIndex = headers.findIndex(header => header.trim().startsWith('Product Description Laptop'));
+
+            console.log(`Product Description USF index: ${productDescriptionIndex}`);
+            console.log(`Product Description Laptop index: ${productDescriptionLaptopIndex}`);
+
+            if (productDescriptionIndex === -1 && productDescriptionLaptopIndex === -1) {
+                console.log('Required columns not found in PSV file.');
+                return;
+            }
+
+            apnDescriptions = {};
+
+            lines.slice(1).forEach((line, index) => {
+                const values = line.split('|');
+                if (values.length > Math.max(productDescriptionIndex, productDescriptionLaptopIndex)) {
+                    const description = values[productDescriptionIndex]?.trim() || values[productDescriptionLaptopIndex]?.trim() || '';
+                    if (description) {
+                        apnDescriptions[index] = description;
+                    }
+                }
+            });
+
+            console.log(`PSV processing complete. Processed ${Object.keys(apnDescriptions).length} descriptions.`);
+            console.log("Sample of processed descriptions:", Object.entries(apnDescriptions).slice(0, 5));
+            renderTable();
+        }
+
+        function populateRouteDropdown() {
+            console.log("Populating route dropdown");
+            const dropdown = document.getElementById('routeDropdown');
+            const uniqueRoutes = [...new Set(csvData.data.map(row => row['Route']))];
+            
+            uniqueRoutes.sort((a, b) => a.localeCompare(b));
+            
+            dropdown.innerHTML = uniqueRoutes.map(route => 
+                `<label><input type="checkbox" value="${route}" onchange="handleRouteSelection(this)" checked> ${route}</label>`
+            ).join('');
+
+            selectedRoutes = new Set(uniqueRoutes);
+        }
+
+        function handleRouteSelection(checkbox) {
+            if (checkbox.checked) {
+                selectedRoutes.add(checkbox.value);
+            } else {
+                selectedRoutes.delete(checkbox.value);
+            }
+            renderTable();
+        }
+
+        function toggleDropdown() {
+            document.getElementById("routeDropdown").classList.toggle("show");
+        }
+
+        function toggleProcessingDeliveryRows() {
+            hideProcessingDelivery = !hideProcessingDelivery;
+            const btn = document.getElementById('toggleProcessingBtn');
+            btn.textContent = hideProcessingDelivery ? 'Show "40s"' : 'Hide "40s"';
+            renderTable();
+        }
+
+        function copyAllAPNLookups() {
+            const visibleData = getFilteredAndSortedData();
+            const apnLookups = visibleData.map(row => row['APN']).join('\n');
+            navigator.clipboard.writeText(apnLookups).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        function bulkEnterDescriptions() {
+            navigator.clipboard.readText().then(text => {
+                const lines = text.split('\n');
+                const visibleData = getFilteredAndSortedData();
+                visibleData.forEach((row, index) => {
+                    if (index < lines.length) {
+                        const description = lines[index].trim();
+                        apnDescriptions[index] = description;
+                    }
+                });
+                renderTable();
+            }).catch(err => {
+                console.error('Failed to read clipboard: ', err);
+            });
+        }
+
+        function handleSort(column) {
+            if (column === 'Date' && isDateColumnHidden) return;
+            const existingSort = sortColumns.find(sc => sc.column === column);
+            if (existingSort) {
+                existingSort.direction = existingSort.direction === 'asc' ? 'desc' : 'asc';
+                sortColumns = [existingSort, ...sortColumns.filter(sc => sc.column !== column)];
+            } else {
+                sortColumns.unshift({ column, direction: 'asc' });
+            }
+            sortColumns = sortColumns.slice(0, 2);  // Keep only the top two sort criteria
+            renderTable();
+        }
+
+        function getRowColor(row) {
+            const reasonCode = row['Reason'];
+            const purpose = row['Purpose'];
+
+            if (reasonCode === '01 Truck Short') return 'bg-yellow-200';
+            if (reasonCode.startsWith('13 Reclaim')) return 'bg-green-200';
+            if (reasonCode.startsWith('04')) return 'bg-yellow-300';
+            if (reasonCode === '10 Spoiled Product' || reasonCode.startsWith('03')) return 'bg-red-200';
+            if (reasonCode.startsWith('99P Pick Up Not A')) return 'bg-orange-200';
+            if (purpose && purpose.toLowerCase().includes('frozen') && !reasonCode.startsWith('01')) return 'bg-blue-200';
+            return '';
+        }
+
+        function getFilteredAndSortedData() {
+            console.log("Filtering and sorting data");
+            return csvData.data
+                .filter(row => {
+                    const routeCondition = selectedRoutes.has(row['Route']);
+                    const processingCondition = !hideProcessingDelivery || row['Reason'] !== '40 Processing Delivery on paper';
+                    const driverCondition = !hideLocalDrivers || !isLocalDriver(row['Driver']);
+                    return routeCondition && processingCondition && driverCondition;
+                })
+                .sort((a, b) => {
+                    for (const { column, direction } of sortColumns) {
+                        if (a[column] < b[column]) return direction === 'asc' ? -1 : 1;
+                        if (a[column] > b[column]) return direction === 'asc' ? 1 : -1;
+                    }
+                    return 0;
+                });
+        }
+
+        function toggleColumnVisibility() {
+            const columnsToToggle = ['Date', 'Cust. Name', 'APN', 'Driver', 'Item ID'];
+            columnsToToggle.forEach(column => {
+                if (hiddenColumns.has(column)) {
+                    hiddenColumns.delete(column);
+                } else {
+                    hiddenColumns.add(column);
+                }
+            });
+            renderTable();
+        }
+
+        function handleDriverClick(driverName, route) {
+            if (selectedRoutes.has(route)) {
+                selectedRoutes.delete(route);
+                const checkbox = document.querySelector(`#routeDropdown input[value="${route}"]`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+                renderTable();
+            }
+        }
+
+        function updateRouteCheckboxes() {
+            const checkboxes = document.querySelectorAll('#routeDropdown input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectedRoutes.has(checkbox.value);
+            });
+        }
+
+        function renderTable() {
+            console.log("Rendering table");
+            const tableContainer = document.getElementById('tableContainer');
+            const filteredAndSortedData = getFilteredAndSortedData();
+            console.log(`Rendering ${filteredAndSortedData.length} rows`);
+
+            let tableHTML = '<table class="border-collapse">';
+            
+            // Render headers
+            tableHTML += '<thead><tr>';
+            csvData.headers.forEach(header => {
+                if (header === 'Date' && isDateColumnHidden) return;
+                const sortInfo = sortColumns.find(sc => sc.column === header);
+                const sortIndicator = sortInfo ? (sortInfo.direction === 'asc' ? ' ▲' : ' ▼') : '';
+                const hiddenClass = hiddenColumns.has(header) ? 'hidden-column' : '';
+                const columnClass = ['Order #', 'Cust. #', 'Route', 'Qty'].includes(header) ? 'column-min' : 'column-auto';
+                tableHTML += `<th class="border p-2 bg-gray-100 overflow-hidden sortable ${hiddenClass} ${columnClass}" onclick="handleSort('${header}')">${header}${sortIndicator}</th>`;
+            });
+            tableHTML += '</tr></thead>';
+
+            // Render body
+            tableHTML += '<tbody>';
+            filteredAndSortedData.forEach((row, rowIndex) => {
+                const rowColor = getRowColor(row);
+                tableHTML += `<tr class="${rowColor}">`;
+                csvData.headers.forEach(header => {
+                    if (header === 'Date' && isDateColumnHidden) return;
+                    let cellContent = row[header] || '';
+                    if (header === 'APN') {
+                        cellContent = `<span class="apn-lookup" onclick="copyToClipboard('${cellContent}')">${cellContent}</span>`;
+                    } else if (header === 'APN Desc.') {
+                        const description = apnDescriptions[rowIndex] || '';
+                        cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription(${rowIndex}, this.value)" class="description-input" maxlength="20">`;
+                    } else if (header === 'Driver') {
+                        cellContent = `<span class="cursor-pointer hover:underline" onclick="handleDriverClick('${cellContent}', '${row['Route']}')">${cellContent}</span>`;
+                    } else if (['Reason', 'Cust. Name', 'Purpose'].includes(header)) {
+                        cellContent = `<div class="truncate">${cellContent}</div>`;
+                    }
+                    const hiddenClass = hiddenColumns.has(header) ? 'hidden-column' : '';
+                    tableHTML += `<td class="border p-2 overflow-hidden ${hiddenClass}">${cellContent}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody></table>';
+
+            tableContainer.innerHTML = tableHTML;
+            updateRouteCheckboxes();
+        }
+
+        function handlePSVFileUpload(event) {
+            console.log("PSV file upload started");
+            const file = event.target.files[0];
+            if (!file) {
+                console.log('No PSV file selected.');
+                return;
+            }
+            if (!file.name.toLowerCase().endsWith('.psv')) {
+                alert('Please select a PSV file.');
+                event.target.value = ''; // Clear the file input
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                processPSVData(text);
+                renderTable();
+            };
+            reader.readAsText(file);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        function isLocalDriver(driverName) {
+            const parts = driverName.split(',').map(part => part.trim());
+            return localDrivers.has(`${parts[0]}, ${parts[1]}`) || localDrivers.has(`${parts[1]} ${parts[0]}`);
+        }
+
+        function updateAPNDescription(rowIndex, description) {
+            apnDescriptions[rowIndex] = description;
+            renderTable();
+        }
+
+        function toggleControls() {
+            const controls = document.getElementById('floatingControls');
+            const btn = document.getElementById('toggleControlsBtn');
+            controls.classList.toggle('hidden');
+            btn.textContent = controls.classList.contains('hidden') ? 'Show' : 'Hide';
+        }
+
+        function toggleDateColumn() {
+            isDateColumnHidden = !isDateColumnHidden;
+            const btn = document.getElementById('toggleDateBtn');
+            btn.textContent = isDateColumnHidden ? 'Show Date' : 'Hide Date';
+            renderTable();
+        }
+		function searchUPC() {
+    const upc = document.getElementById('upcInput').value.trim();
+    if (!upc) {
+        alert('Please enter a UPC');
+        return;
+    }
+
+    const url = `https://world.openfoodfacts.org/api/v0/product/${upc}.json`;
+    const modalContent = document.getElementById('upcModalContent');
+    modalContent.innerHTML = 'Loading...';
+    showModal();
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 1) {
+                const product = data.product;
+                const productLink = `https://world.openfoodfacts.org/product/${product._id}`;
+                modalContent.innerHTML = `
+                    <p><strong>Product Name:</strong> ${product.product_name || 'N/A'}</p>
+                    <p><strong>Product Number:</strong> ${product._id}</p>
+                    <p><strong>Brand:</strong> ${product.brands || 'N/A'}</p>
+                    <p><strong>Categories:</strong> ${product.categories || 'N/A'}</p>
+                    <p><strong>Labels:</strong> ${product.labels || 'N/A'}</p>
+                    <p><a href="${productLink}" target="_blank">View Nutritional Information</a></p>
+                `;
+            } else {
+                modalContent.innerHTML = 'Product not found.';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            modalContent.innerHTML = `An error occurred while searching: ${error.message}. Please try again.`;
+        });
+}
+
+		function showModal() {
+			const modal = document.getElementById('upcModal');
+			modal.style.display = 'block';
+		}
+
+		function closeModal() {
+			const modal = document.getElementById('upcModal');
+			modal.style.display = 'none';
+		}
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    const csvFileInput = document.getElementById('csvFileInput');
+    const psvFileInput = document.getElementById('psvFileInput');
+    document.getElementById('floatingControls').classList.add('hidden');
+
+    csvFileInput.addEventListener('change', handleCSVFileUpload);
+    psvFileInput.addEventListener('change', handlePSVFileUpload);
+
+    const fileInputs = document.querySelectorAll('.file-input-wrapper input[type="file"]');
+    fileInputs.forEach(input => {
+        const button = input.nextElementSibling;
+        input.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                button.textContent = this.files[0].name;
+            } else {
+                button.textContent = this.accept === '.csv' ? 'Choose CSV' : 'Choose PSV';
+            }
+        });
+    });
+
+    // Add event listener for Enter key on UPC input
+    document.getElementById('upcInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchUPC();
+        }
+    });
+
+    // Close modal when clicking on the close button or outside the modal
+    document.querySelector('.close').addEventListener('click', closeModal);
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('upcModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    });
+});
+    </script>
+	
+	<div id="upcModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Product Information</h2>
+        <div id="upcModalContent"></div>
+    </div>
+</div>
+</body>
+</html>
