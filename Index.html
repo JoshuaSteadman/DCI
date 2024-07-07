@@ -731,6 +731,27 @@ function mergeRows(data) {
             tableContainer.innerHTML = tableHTML;
             updateRouteCheckboxes();
         }
+        function handleCSVFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                csvData = parseCSV(text);
+                populateRouteDropdown();
+                apnDescriptions = {};
+                renderTable();
+            };
+            reader.readAsText(file);
+        }
+
+        function handlePSVFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                processPSVData(text);
+                renderTable();
+            };
+            reader.readAsText(file);
+        }
 
         function handlePSVFileUpload(event) {
             console.log("PSV file upload started");
@@ -832,43 +853,70 @@ function mergeRows(data) {
 			const modal = document.getElementById('upcModal');
 			modal.style.display = 'none';
 		}
+ function initSimpleDragAndDrop() {
+            document.body.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
 
-document.addEventListener('DOMContentLoaded', (event) => {
-    const csvFileInput = document.getElementById('csvFileInput');
-    const psvFileInput = document.getElementById('psvFileInput');
-    document.getElementById('floatingControls').classList.add('hidden');
+            document.body.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
 
-    csvFileInput.addEventListener('change', handleCSVFileUpload);
-    psvFileInput.addEventListener('change', handlePSVFileUpload);
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.name.toLowerCase().endsWith('.csv')) {
+                        handleCSVFile(file);
+                    } else if (file.name.toLowerCase().endsWith('.psv')) {
+                        handlePSVFile(file);
+                    } else {
+                        alert('Please drop a CSV or PSV file.');
+                    }
+                }
+            });
+        }
+		
+        // Modify the DOMContentLoaded event listener
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const csvFileInput = document.getElementById('csvFileInput');
+            const psvFileInput = document.getElementById('psvFileInput');
+            document.getElementById('floatingControls').classList.add('hidden');
 
-    const fileInputs = document.querySelectorAll('.file-input-wrapper input[type="file"]');
-    fileInputs.forEach(input => {
-        const button = input.nextElementSibling;
-        input.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                button.textContent = this.files[0].name;
-            } else {
-                button.textContent = this.accept === '.csv' ? 'Choose CSV' : 'Choose PSV';
-            }
+            csvFileInput.addEventListener('change', (e) => handleCSVFile(e.target.files[0]));
+            psvFileInput.addEventListener('change', (e) => handlePSVFile(e.target.files[0]));
+
+            const fileInputs = document.querySelectorAll('.file-input-wrapper input[type="file"]');
+            fileInputs.forEach(input => {
+                const button = input.nextElementSibling;
+                input.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        button.textContent = this.files[0].name;
+                    } else {
+                        button.textContent = this.accept === '.csv' ? 'Choose CSV' : 'Choose PSV';
+                    }
+                });
+            });
+
+            // Add event listener for Enter key on UPC input
+            document.getElementById('upcInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchUPC();
+                }
+            });
+
+            // Close modal when clicking on the close button or outside the modal
+            document.querySelector('.close').addEventListener('click', closeModal);
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('upcModal');
+                if (event.target == modal) {
+                    closeModal();
+                }
+            });
+
+            // Initialize simplified drag and drop functionality
+            initSimpleDragAndDrop();
         });
-    });
-
-    // Add event listener for Enter key on UPC input
-    document.getElementById('upcInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            searchUPC();
-        }
-    });
-
-    // Close modal when clicking on the close button or outside the modal
-    document.querySelector('.close').addEventListener('click', closeModal);
-    window.addEventListener('click', function(event) {
-        const modal = document.getElementById('upcModal');
-        if (event.target == modal) {
-            closeModal();
-        }
-    });
-});
     </script>
 	
 	<div id="upcModal" class="modal">
