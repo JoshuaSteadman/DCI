@@ -217,63 +217,63 @@
             }
         }
 		.modal {
-    display: none;
-    position: fixed;
-    z-index: 1001;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
-}
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
 
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 500px;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
 
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-.close:hover,
-.close:focus {
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-}
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
 
-#upcModalContent {
-    margin-top: 20px;
-}
+        #upcModalContent {
+            margin-top: 20px;
+        }
 
-#upcModalContent p {
-    margin: 10px 0;
-}
+        #upcModalContent p {
+            margin: 10px 0;
+        }
 
-.upc-search {
-    display: flex;
-    align-items: center;
-    margin-right: 10px;
-}
+        .upc-search {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+        }
 
-.upc-search input {
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 0.25rem;
-    margin-right: 5px;
-}
+        .upc-search input {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 0.25rem;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
@@ -314,7 +314,7 @@
             { column: 'Reason', direction: 'asc' }
         ];
         let selectedRoutes = new Set();
-        let apnDescriptions = {};
+        let apnDescriptions = {}; // Keys will now be composite strings
         let hideProcessingDelivery = false;
         let hiddenColumns = new Set();
         let hideLocalDrivers = false;
@@ -332,36 +332,35 @@
             "Fishman, Ryan", "Sanderson, Sean", "Robbins, David"
         ]);
 
-     let originalSelectedRoutes = new Set();
+        let originalSelectedRoutes = new Set();
 
-		function toggleLocalDrivers() {
-			hideLocalDrivers = !hideLocalDrivers;
-			const btn = document.getElementById('toggleLocalDriversBtn');
-			
-			if (hideLocalDrivers) {
-				btn.textContent = 'Show L.Rts';
-				// Store the original state before hiding
-				originalSelectedRoutes = new Set(selectedRoutes);
-				
-				csvData.data.forEach(row => {
-					if (isLocalDriver(row['Driver'])) {
-						selectedRoutes.delete(row['Route']);
-					}
-				});
-			} else {
-				btn.textContent = 'Hide L.Rts';
-				// Restore the original state
-				selectedRoutes = new Set(originalSelectedRoutes);
-			}
+        function toggleLocalDrivers() {
+            hideLocalDrivers = !hideLocalDrivers;
+            const btn = document.getElementById('toggleLocalDriversBtn');
+            
+            if (hideLocalDrivers) {
+                btn.textContent = 'Show L.Rts';
+                originalSelectedRoutes = new Set(selectedRoutes);
+                
+                csvData.data.forEach(row => {
+                    if (isLocalDriver(row['Driver'])) {
+                        selectedRoutes.delete(row['Route']);
+                    }
+                });
+            } else {
+                btn.textContent = 'Hide L.Rts';
+                selectedRoutes = new Set(originalSelectedRoutes);
+            }
 
-			updateRouteCheckboxes();
-			renderTable();
-		}
+            updateRouteCheckboxes();
+            renderTable();
+        }
 
         function copyAllDescriptions() {
             const visibleData = getFilteredAndSortedData();
-            const descriptions = visibleData.map((row, index) => {
-                return apnDescriptions[index] || '';
+            const descriptions = visibleData.map(row => {
+                const key = `${row['Order #']}-${row['APN']}-${row['Reason']}`;
+                return apnDescriptions[key] || '';
             }).filter(desc => desc !== '').join('\n');
             
             if (descriptions) {
@@ -386,7 +385,7 @@
 
             if (hideLocalDrivers) {
                 hideLocalDrivers = false;
-                document.getElementById('toggleLocalDriversBtn').textContent = 'Hide Local Drivers';
+                document.getElementById('toggleLocalDriversBtn').textContent = 'Hide L.Rts';
             }
 
             updateRouteCheckboxes();
@@ -409,8 +408,7 @@
                 'Qty (Exc / Tot)': 'Qty',
                 'Driver Name': 'Driver',
                 'Date': 'Date',
-                'APN Lookup': 'APN',
-                'APN Description': 'APN Desc.'
+                'APN Lookup': 'APN'
             };
 
             const headers = originalHeaders.map(header => headerMap[header] || header);
@@ -475,7 +473,8 @@
 
             return { headers, data: mergeRows(data) };
         }
-function mergeRows(data) {
+
+        function mergeRows(data) {
             console.log("Merging rows...");
             const mergedData = {};
             data.forEach(row => {
@@ -540,14 +539,15 @@ function mergeRows(data) {
                 const values = line.split('|');
                 if (values.length > Math.max(productDescriptionIndex, productDescriptionLaptopIndex)) {
                     const description = values[productDescriptionIndex]?.trim() || values[productDescriptionLaptopIndex]?.trim() || '';
-                    if (description) {
-                        apnDescriptions[index] = description;
+                    if (description && index < csvData.data.length) {
+                        const row = csvData.data[index];
+                        const key = `${row['Order #']}-${row['APN']}-${row['Reason']}`;
+                        apnDescriptions[key] = description;
                     }
                 }
             });
 
             console.log(`PSV processing complete. Processed ${Object.keys(apnDescriptions).length} descriptions.`);
-            console.log("Sample of processed descriptions:", Object.entries(apnDescriptions).slice(0, 5));
             renderTable();
         }
 
@@ -600,7 +600,8 @@ function mergeRows(data) {
                 visibleData.forEach((row, index) => {
                     if (index < lines.length) {
                         const description = lines[index].trim();
-                        apnDescriptions[index] = description;
+                        const key = `${row['Order #']}-${row['APN']}-${row['Reason']}`;
+                        apnDescriptions[key] = description;
                     }
                 });
                 renderTable();
@@ -705,8 +706,9 @@ function mergeRows(data) {
 
             // Render body
             tableHTML += '<tbody>';
-            filteredAndSortedData.forEach((row, rowIndex) => {
+            filteredAndSortedData.forEach(row => {
                 const rowColor = getRowColor(row);
+                const rowKey = `${row['Order #']}-${row['APN']}-${row['Reason']}`;
                 tableHTML += `<tr class="${rowColor}">`;
                 csvData.headers.forEach(header => {
                     if (header === 'Date' && isDateColumnHidden) return;
@@ -714,8 +716,8 @@ function mergeRows(data) {
                     if (header === 'APN') {
                         cellContent = `<span class="apn-lookup" onclick="copyToClipboard('${cellContent}')">${cellContent}</span>`;
                     } else if (header === 'APN Desc.') {
-                        const description = apnDescriptions[rowIndex] || '';
-                        cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription(${rowIndex}, this.value)" class="description-input" maxlength="20">`;
+                        const description = apnDescriptions[rowKey] || '';
+                        cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription('${rowKey}', this.value)" class="description-input" maxlength="20">`;
                     } else if (header === 'Driver') {
                         cellContent = `<span class="cursor-pointer hover:underline" onclick="handleDriverClick('${cellContent}', '${row['Route']}')">${cellContent}</span>`;
                     } else if (['Reason', 'Cust. Name', 'Purpose'].includes(header)) {
@@ -731,6 +733,7 @@ function mergeRows(data) {
             tableContainer.innerHTML = tableHTML;
             updateRouteCheckboxes();
         }
+
         function handleCSVFile(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -785,8 +788,8 @@ function mergeRows(data) {
             return localDrivers.has(`${parts[0]}, ${parts[1]}`) || localDrivers.has(`${parts[1]} ${parts[0]}`);
         }
 
-        function updateAPNDescription(rowIndex, description) {
-            apnDescriptions[rowIndex] = description;
+        function updateAPNDescription(rowKey, description) {
+            apnDescriptions[rowKey] = description;
             renderTable();
         }
 
@@ -803,57 +806,59 @@ function mergeRows(data) {
             btn.textContent = isDateColumnHidden ? 'Show Date' : 'Hide Date';
             renderTable();
         }
-		function searchUPC() {
-    const upc = document.getElementById('upcInput').value.trim();
-    if (!upc) {
-        alert('Please enter a UPC');
-        return;
-    }
 
-    const url = `https://world.openfoodfacts.org/api/v0/product/${upc}.json`;
-    const modalContent = document.getElementById('upcModalContent');
-    modalContent.innerHTML = 'Loading...';
-    showModal();
-
-    fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+        function searchUPC() {
+            const upc = document.getElementById('upcInput').value.trim();
+            if (!upc) {
+                alert('Please enter a UPC');
+                return;
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 1) {
-                const product = data.product;
-                const productLink = `https://world.openfoodfacts.org/product/${product._id}`;
-                modalContent.innerHTML = `
-                    <p><strong>Product Name:</strong> ${product.product_name || 'N/A'}</p>
-                    <p><strong>Product Number:</strong> ${product._id}</p>
-                    <p><strong>Brand:</strong> ${product.brands || 'N/A'}</p>
-                    <p><strong>Categories:</strong> ${product.categories || 'N/A'}</p>
-                    <p><strong>Labels:</strong> ${product.labels || 'N/A'}</p>
-                    <p><a href="${productLink}" target="_blank">View Nutritional Information</a></p>
-                `;
-            } else {
-                modalContent.innerHTML = 'Product not found.';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            modalContent.innerHTML = `An error occurred while searching: ${error.message}. Please try again.`;
-        });
-}
 
-		function showModal() {
-			const modal = document.getElementById('upcModal');
-			modal.style.display = 'block';
-		}
+            const url = `https://world.openfoodfacts.org/api/v0/product/${upc}.json`;
+            const modalContent = document.getElementById('upcModalContent');
+            modalContent.innerHTML = 'Loading...';
+            showModal();
 
-		function closeModal() {
-			const modal = document.getElementById('upcModal');
-			modal.style.display = 'none';
-		}
- function initSimpleDragAndDrop() {
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 1) {
+                        const product = data.product;
+                        const productLink = `https://world.openfoodfacts.org/product/${product._id}`;
+                        modalContent.innerHTML = `
+                            <p><strong>Product Name:</strong> ${product.product_name || 'N/A'}</p>
+                            <p><strong>Product Number:</strong> ${product._id}</p>
+                            <p><strong>Brand:</strong> ${product.brands || 'N/A'}</p>
+                            <p><strong>Categories:</strong> ${product.categories || 'N/A'}</p>
+                            <p><strong>Labels:</strong> ${product.labels || 'N/A'}</p>
+                            <p><a href="${productLink}" target="_blank">View Nutritional Information</a></p>
+                        `;
+                    } else {
+                        modalContent.innerHTML = 'Product not found.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    modalContent.innerHTML = `An error occurred while searching: ${error.message}. Please try again.`;
+                });
+        }
+
+        function showModal() {
+            const modal = document.getElementById('upcModal');
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('upcModal');
+            modal.style.display = 'none';
+        }
+
+        function initSimpleDragAndDrop() {
             document.body.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -876,8 +881,7 @@ function mergeRows(data) {
                 }
             });
         }
-		
-        // Modify the DOMContentLoaded event listener
+
         document.addEventListener('DOMContentLoaded', (event) => {
             const csvFileInput = document.getElementById('csvFileInput');
             const psvFileInput = document.getElementById('psvFileInput');
@@ -898,14 +902,12 @@ function mergeRows(data) {
                 });
             });
 
-            // Add event listener for Enter key on UPC input
             document.getElementById('upcInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     searchUPC();
                 }
             });
 
-            // Close modal when clicking on the close button or outside the modal
             document.querySelector('.close').addEventListener('click', closeModal);
             window.addEventListener('click', function(event) {
                 const modal = document.getElementById('upcModal');
@@ -914,17 +916,16 @@ function mergeRows(data) {
                 }
             });
 
-            // Initialize simplified drag and drop functionality
             initSimpleDragAndDrop();
         });
     </script>
 	
-	<div id="upcModal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Product Information</h2>
-        <div id="upcModalContent"></div>
+    <div id="upcModal" class="modal">
+        <div class="modal-content">
+            <span class="close">×</span>
+            <h2>Product Information</h2>
+            <div id="upcModalContent"></div>
+        </div>
     </div>
-</div>
 </body>
 </html>
